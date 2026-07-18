@@ -138,10 +138,10 @@ img{max-width:100%}
 .pv-qty-row{display:flex;align-items:center;justify-content:space-between;margin:14px 0;gap:14px}
 .pv-qty-row b{font-size:13px}
 
-.ad-banner{width:100%;background:#0F172A}
-.ad-banner-wrap{max-width:1280px;margin:0 auto;aspect-ratio:21/8;overflow:hidden;position:relative}
+.ad-banner{width:100%;background:#0F172A;padding:10px 20px}
+.ad-banner-wrap{max-width:1280px;margin:0 auto;aspect-ratio:3/1;max-height:190px;overflow:hidden;position:relative;border-radius:14px}
 .ad-banner-wrap video,.ad-banner-wrap iframe{width:100%;height:100%;object-fit:cover;border:0;display:block}
-@media(max-width:640px){ .ad-banner-wrap{aspect-ratio:16/9} }
+@media(max-width:640px){ .ad-banner-wrap{aspect-ratio:16/9;max-height:130px} }
 .ci-total{font-size:13.5px;font-weight:800}
 .ci-remove{font-size:11px;color:var(--danger)}
 .cart-foot{border-top:1px solid var(--line);padding:16px 20px}
@@ -473,7 +473,7 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
     </select>
   </div>
 
-  <main class="product-grid" id="productGrid"></main>
+  <main class="product-grid" id="productGrid"><div class="empty-msg">Cargando catálogo…</div></main>
 
   <footer class="store-footer">
     <b id="footName">CANAAN</b> · <span id="footTag"></span><br>
@@ -938,18 +938,37 @@ const settingsRef = db.collection('settings').doc('store');
 const productsCol = db.collection('products');
 const ordersCol = db.collection('orders');
 
+/* Evita que la grilla de productos "salte" mientras el cliente está tocando:
+   el banner publicitario (settings) y los productos llegan de Firestore por
+   separado y en momentos distintos. Si el banner aparece DESPUÉS de que la
+   grilla ya se pintó, empuja todos los productos hacia abajo justo cuando
+   alguien está por tocar uno, haciendo que el dedo "pierda" el producto.
+   Por eso esperamos a tener settings + products al menos una vez antes de
+   pintar la grilla por primera vez; las actualizaciones posteriores en vivo
+   sí se reflejan normalmente. */
+let settingsReady = false, productsReady = false, storeFirstPaintDone = false;
+function tryStoreFirstPaint(){
+  if(storeFirstPaintDone || !settingsReady || !productsReady) return;
+  storeFirstPaintDone = true;
+  renderGrid();
+}
+
 function listenSettings(){
   settingsRef.onSnapshot(snap=>{
     settings = Object.assign({}, DEFAULT_SETTINGS, snap.exists ? snap.data() : {});
+    settingsReady = true;
     renderHeader(); renderChips(); renderExternalLinks();
     if(document.body.classList.contains('in-admin')) loadSettingsForm();
+    tryStoreFirstPaint();
   });
 }
 
 function listenProducts(){
   productsCol.onSnapshot(snap=>{
     products = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
-    renderGrid();
+    productsReady = true;
+    if(storeFirstPaintDone) renderGrid();
+    else tryStoreFirstPaint();
     if(document.body.classList.contains('in-admin')) renderInventory();
   }, err=>{ console.error(err); });
 }
@@ -2080,7 +2099,7 @@ async function saveSettings(){
 }
 
 /* ---------- init ---------- */
-renderHeader(); renderChips(); renderGrid(); updateCartUI(); renderExternalLinks();
+renderHeader(); renderChips(); updateCartUI(); renderExternalLinks();
 listenSettings();
 listenProducts();
 /* La primera vez que el administrador entre y presione "Guardar cambios" en
