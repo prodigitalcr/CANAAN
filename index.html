@@ -1091,6 +1091,12 @@ function renderHeader(){
 }
 function renderChips(){
   const cats = ['Todos'].concat(settings.categories);
+  /* Si la categoría activa ya no existe (por ejemplo, el admin la renombró
+     o la borró en Configuraciones), volvemos a "Todos" automáticamente.
+     Si no se hiciera esto, el filtro seguiría buscando una categoría que
+     ya no coincide con ningún producto y la grilla se quedaría vacía sin
+     que el cliente entienda por qué, hasta que recargue la página. */
+  if(!cats.includes(activeCat)) activeCat = 'Todos';
   document.getElementById('catChips').innerHTML = cats.map(c =>
     '<button class="chip' + (c===activeCat?' active':'') + '" onclick="setCat(\'' + esc(c) + '\')">' + (c==='Todos'?'Ver todos':esc(c)) + '</button>'
   ).join('');
@@ -1137,41 +1143,50 @@ function firstImage(p){
 }
 
 function renderGrid(){
-  const q = (document.getElementById('searchInput').value||'').toLowerCase().trim();
-  const sort = document.getElementById('sortSelect').value;
-  let list = products.filter(p => p.active !== false);
-  if(activeCat !== 'Todos') list = list.filter(p => p.cat === activeCat);
-  if(q) list = list.filter(p => (p.name + ' ' + (p.desc||'')).toLowerCase().includes(q));
-  if(sort==='asc') list.sort((a,b)=>a.price-b.price);
-  else if(sort==='desc') list.sort((a,b)=>b.price-a.price);
-  else if(sort==='name') list.sort((a,b)=>a.name.localeCompare(b.name,'es'));
-
   const grid = document.getElementById('productGrid');
-  if(!list.length){
-    grid.innerHTML = '<div class="empty-msg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><br>No encontramos productos con ese criterio.</div>';
-    return;
-  }
-  grid.innerHTML = list.map(p => {
-    const st = stockInfo(p);
-    const g = gradFor(p.id);
-    const img = firstImage(p);
-    const media = img ?
-      '<img src="' + esc(img) + '" alt="' + esc(p.name) + '" loading="lazy" draggable="false" style="width:100%;height:100%;object-fit:cover">' :
-      svgIcon(p.icon);
-    return '<div class="p-card" data-id="' + esc(p.id) + '">' +
-      '<div class="p-img" style="background:linear-gradient(135deg,' + g[0] + ',' + g[1] + ')">' +
-        media +
-        '<span class="p-stock ' + st.cls + '">' + st.label + '</span>' +
-      '</div>' +
-      '<div class="p-body">' +
-        '<div class="p-name">' + esc(p.name) + '</div>' +
-        '<div class="p-desc">' + esc(p.desc||'') + '</div>' +
-        '<div class="p-foot"><span class="p-price">' + displayPrice(p) + '</span>' +
-        '<button class="add-btn" ' + (st.can?'':'disabled') + ' data-add="' + esc(p.id) + '" data-variants="' + (p.hasVariants?'1':'0') + '" title="' + (p.hasVariants?'Elegir opción':'Agregar al carrito') + '">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>' +
+  try{
+    const q = (document.getElementById('searchInput').value||'').toLowerCase().trim();
+    const sort = document.getElementById('sortSelect').value;
+    let list = products.filter(p => p.active !== false);
+    if(activeCat !== 'Todos') list = list.filter(p => p.cat === activeCat);
+    if(q) list = list.filter(p => ((p.name||'') + ' ' + (p.desc||'')).toLowerCase().includes(q));
+    /* Ordenar de forma defensiva: un solo producto con datos incompletos
+       (precio o nombre faltante) no debe romper la comparación y vaciar
+       toda la grilla; en ese caso simplemente se deja sin ordenar. */
+    if(sort==='asc') list.sort((a,b)=>(a.price||0)-(b.price||0));
+    else if(sort==='desc') list.sort((a,b)=>(b.price||0)-(a.price||0));
+    else if(sort==='name') list.sort((a,b)=>(a.name||'').localeCompare(b.name||'','es'));
+
+    if(!list.length){
+      grid.innerHTML = '<div class="empty-msg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><br>No encontramos productos con ese criterio.</div>';
+      return;
+    }
+    grid.innerHTML = list.map(p => {
+      const st = stockInfo(p);
+      const g = gradFor(p.id);
+      const img = firstImage(p);
+      const media = img ?
+        '<img src="' + esc(img) + '" alt="' + esc(p.name) + '" loading="lazy" draggable="false" style="width:100%;height:100%;object-fit:cover">' :
+        svgIcon(p.icon);
+      return '<div class="p-card" data-id="' + esc(p.id) + '">' +
+        '<div class="p-img" style="background:linear-gradient(135deg,' + g[0] + ',' + g[1] + ')">' +
+          media +
+          '<span class="p-stock ' + st.cls + '">' + st.label + '</span>' +
         '</div>' +
-      '</div></div>';
-  }).join('');
+        '<div class="p-body">' +
+          '<div class="p-name">' + esc(p.name) + '</div>' +
+          '<div class="p-desc">' + esc(p.desc||'') + '</div>' +
+          '<div class="p-foot"><span class="p-price">' + displayPrice(p) + '</span>' +
+          '<button class="add-btn" ' + (st.can?'':'disabled') + ' data-add="' + esc(p.id) + '" data-variants="' + (p.hasVariants?'1':'0') + '" title="' + (p.hasVariants?'Elegir opción':'Agregar al carrito') + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>' +
+          '</div>' +
+        '</div></div>';
+    }).join('');
+  }catch(e){
+    /* Si algo falla al pintar la grilla, lo dejamos registrado en la
+       consola en vez de dejar la pantalla en blanco sin explicación. */
+    console.error('renderGrid error:', e);
+  }
 }
 /* Delegación de clics: un único listener fijo en el contenedor de la grilla
    en vez de "onclick" individuales por tarjeta. Así, aunque la grilla se
@@ -1180,16 +1195,20 @@ function renderGrid(){
    porque el listener vive en el contenedor, no en la tarjeta que pudo haber
    sido reemplazada. */
 document.getElementById('productGrid').addEventListener('click', function(e){
-  const addBtn = e.target.closest('[data-add]');
-  if(addBtn){
-    e.stopPropagation();
-    const id = addBtn.dataset.add;
-    if(addBtn.dataset.variants === '1') openProductView(id);
-    else addToCart(id);
-    return;
+  try{
+    const addBtn = e.target.closest('[data-add]');
+    if(addBtn){
+      e.stopPropagation();
+      const id = addBtn.dataset.add;
+      if(addBtn.dataset.variants === '1') openProductView(id);
+      else addToCart(id);
+      return;
+    }
+    const card = e.target.closest('.p-card');
+    if(card) openProductView(card.dataset.id);
+  }catch(e){
+    console.error('product click error:', e);
   }
-  const card = e.target.closest('.p-card');
-  if(card) openProductView(card.dataset.id);
 });
 
 /* ---------- vista detalle de producto (galería + video + variantes + cantidad) ---------- */
