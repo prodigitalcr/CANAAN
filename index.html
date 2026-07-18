@@ -78,8 +78,9 @@ img{max-width:100%}
 .sort-select{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:600;color:var(--ink);outline:none}
 
 .product-grid{max-width:1280px;margin:0 auto;padding:14px 20px 90px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
-.p-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:.2s;position:relative}
+.p-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:.2s;position:relative;cursor:pointer}
 .p-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.p-card img{-webkit-user-drag:none;user-drag:none;user-select:none;-webkit-user-select:none}
 .p-img{aspect-ratio:1.15;display:flex;align-items:center;justify-content:center;position:relative}
 .p-img svg{width:72px;height:72px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.18))}
 .p-stock{position:absolute;top:10px;left:10px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.92)}
@@ -1155,9 +1156,9 @@ function renderGrid(){
     const g = gradFor(p.id);
     const img = firstImage(p);
     const media = img ?
-      '<img src="' + esc(img) + '" alt="' + esc(p.name) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover">' :
+      '<img src="' + esc(img) + '" alt="' + esc(p.name) + '" loading="lazy" draggable="false" style="width:100%;height:100%;object-fit:cover">' :
       svgIcon(p.icon);
-    return '<div class="p-card" onclick="openProductView(\'' + p.id + '\')">' +
+    return '<div class="p-card" data-id="' + esc(p.id) + '">' +
       '<div class="p-img" style="background:linear-gradient(135deg,' + g[0] + ',' + g[1] + ')">' +
         media +
         '<span class="p-stock ' + st.cls + '">' + st.label + '</span>' +
@@ -1166,12 +1167,30 @@ function renderGrid(){
         '<div class="p-name">' + esc(p.name) + '</div>' +
         '<div class="p-desc">' + esc(p.desc||'') + '</div>' +
         '<div class="p-foot"><span class="p-price">' + displayPrice(p) + '</span>' +
-        '<button class="add-btn" ' + (st.can?'':'disabled') + ' onclick="event.stopPropagation();' + (p.hasVariants ? "openProductView('"+p.id+"')" : "addToCart('"+p.id+"')") + '" title="' + (p.hasVariants?'Elegir opción':'Agregar al carrito') + '">' +
+        '<button class="add-btn" ' + (st.can?'':'disabled') + ' data-add="' + esc(p.id) + '" data-variants="' + (p.hasVariants?'1':'0') + '" title="' + (p.hasVariants?'Elegir opción':'Agregar al carrito') + '">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>' +
         '</div>' +
       '</div></div>';
   }).join('');
 }
+/* Delegación de clics: un único listener fijo en el contenedor de la grilla
+   en vez de "onclick" individuales por tarjeta. Así, aunque la grilla se
+   vuelva a pintar en el momento exacto en que el cliente toca un producto
+   (por una actualización en vivo de Firestore), el clic sigue funcionando
+   porque el listener vive en el contenedor, no en la tarjeta que pudo haber
+   sido reemplazada. */
+document.getElementById('productGrid').addEventListener('click', function(e){
+  const addBtn = e.target.closest('[data-add]');
+  if(addBtn){
+    e.stopPropagation();
+    const id = addBtn.dataset.add;
+    if(addBtn.dataset.variants === '1') openProductView(id);
+    else addToCart(id);
+    return;
+  }
+  const card = e.target.closest('.p-card');
+  if(card) openProductView(card.dataset.id);
+});
 
 /* ---------- vista detalle de producto (galería + video + variantes + cantidad) ---------- */
 let pvCurrentId = null;
