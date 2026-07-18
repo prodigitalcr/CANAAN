@@ -134,6 +134,14 @@ img{max-width:100%}
 .qty-ctl button{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:var(--ink)}
 .qty-ctl button:hover{background:var(--green-soft);color:var(--green)}
 .qty-ctl span{min-width:26px;text-align:center;font-size:13.5px;font-weight:700}
+.pv-unit-hint{font-size:11.5px;color:var(--muted);font-weight:600;margin-left:6px}
+.pv-qty-row{display:flex;align-items:center;justify-content:space-between;margin:14px 0;gap:14px}
+.pv-qty-row b{font-size:13px}
+
+.ad-banner{width:100%;background:#0F172A}
+.ad-banner-wrap{max-width:1280px;margin:0 auto;aspect-ratio:21/8;overflow:hidden;position:relative}
+.ad-banner-wrap video,.ad-banner-wrap iframe{width:100%;height:100%;object-fit:cover;border:0;display:block}
+@media(max-width:640px){ .ad-banner-wrap{aspect-ratio:16/9} }
 .ci-total{font-size:13.5px;font-weight:800}
 .ci-remove{font-size:11px;color:var(--danger)}
 .cart-foot{border-top:1px solid var(--line);padding:16px 20px}
@@ -243,7 +251,9 @@ textarea.f-input{resize:vertical;min-height:70px}
 .media-item.filled{cursor:pointer}
 
 .variant-row{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
-.variant-row .vr-icon{width:30px;height:30px;border-radius:9px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green)}
+.variant-row .vr-icon{width:36px;height:36px;border-radius:9px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--green);cursor:pointer;overflow:hidden;position:relative}
+.variant-row .vr-icon:hover{outline:2px solid var(--green)}
+.variant-row .vr-icon img{width:100%;height:100%;object-fit:cover}
 .variant-row .vr-icon svg{width:16px;height:16px}
 .variant-row .vr-fields{flex:1;display:grid;grid-template-columns:1fr 1fr 0.8fr;gap:8px;min-width:0}
 .variant-row .vr-fields input{padding:8px 10px;font-size:13px}
@@ -278,6 +288,8 @@ textarea.f-input{resize:vertical;min-height:70px}
 .trk-head b{display:block;font-size:15px}
 .trk-head span{font-size:12.5px;color:var(--muted)}
 .uber-track{position:relative;padding-left:6px;margin:22px 0}
+.uber-track-admin{background:#F9FAFB;border:1px solid var(--line);border-radius:14px;padding:6px 16px 0;margin-bottom:6px}
+.uber-track-admin .uber-track{margin:14px 0 4px}
 .uber-step{position:relative;display:flex;gap:14px;padding-bottom:26px}
 .uber-step:last-child{padding-bottom:0}
 .uber-step .dot{width:30px;height:30px;border-radius:50%;background:#E5E7EB;color:#9CA3AF;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1;transition:.2s}
@@ -310,6 +322,7 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
 .adm-link:hover{background:#F3F4F6}
 .adm-link.active{background:var(--yellow-soft);color:var(--ink)}
 .adm-link.active svg{color:#B45309}
+.nav-badge{margin-left:auto;min-width:20px;height:20px;border-radius:10px;background:var(--danger);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px}
 .adm-link.logout{color:var(--danger)}
 .adm-link.logout svg{color:var(--danger)}
 .adm-main{flex:1;overflow-y:auto;padding:22px 26px}
@@ -444,6 +457,8 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
       </button>
     </div>
   </header>
+
+  <div class="ad-banner" id="adBanner" style="display:none"><div class="ad-banner-wrap" id="adBannerWrap"></div></div>
 
   <div class="info-bar" id="infoBar"></div>
   <div class="info-bar" id="externalLinksBar" style="padding-top:0"></div>
@@ -581,6 +596,7 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
       </button>
       <button class="adm-link" data-panel="orders" onclick="showPanel('orders',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11h6M9 15h4M5 3h14v18l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5z"/></svg><span>Pedidos</span>
+        <span class="nav-badge" id="ordersNavBadge" style="display:none">0</span>
       </button>
       <div class="sec">Tienda</div>
       <button class="adm-link" data-panel="settings" onclick="showPanel('settings',this)">
@@ -707,6 +723,11 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
         <div class="desc">Botones visibles para los clientes en la tienda. Dejalos vacíos para ocultarlos.</div>
         <div class="f-row">
           <div class="f-group"><label>Sitio web de Canaan</label><input class="f-input" id="sWebUrl" placeholder="https://www.canaan.co.cr"></div>
+          <div class="f-group">
+            <label>Video publicitario de la tienda (opcional)</label>
+            <input class="f-input" id="sAdVideo" placeholder="Enlace de YouTube o video directo (.mp4)">
+            <p class="hint">Se muestra como un banner horizontal arriba del catálogo. Usá un video horizontal (panorámico).</p>
+          </div>
           <div class="f-group"><label>Plataforma de juegos (Bingo de Plantas)</label><input class="f-input" id="sBingoUrl" placeholder="https://usuario.github.io/bingo-plantas"></div>
         </div>
       </div>
@@ -735,6 +756,7 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
     <div class="modal-body">
       <input type="hidden" id="pId">
       <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="onImageFileChosen(this)">
+      <input type="file" id="variantImgFileInput" accept="image/*" style="display:none" onchange="onVariantImageFileChosen(this)">
 
       <div class="pm-body">
         <!-- ---- columna izquierda: datos del producto ---- -->
@@ -835,6 +857,10 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
         <label style="display:block;margin-bottom:4px;font-weight:600;font-size:13px" id="pvVariantLabel">Tamaños</label>
         <div class="pv-variants" id="pvVariants"></div>
       </div>
+      <div class="pv-qty-row">
+        <b>Cantidad</b>
+        <div class="qty-ctl" id="pvQtyCtl"><button onclick="pvChangeQty(-1)">−</button><span id="pvQty">1</span><button onclick="pvChangeQty(1)">+</button></div>
+      </div>
       <div class="pv-foot">
         <span class="p-price" id="pvPrice"></span>
         <button class="btn-primary" style="width:auto;padding:12px 22px" id="pvAddBtn">Agregar al pedido</button>
@@ -891,6 +917,7 @@ const DEFAULT_SETTINGS = {
   websiteUrl:'',
   bingoUrl:'',
   logoUrl:'',
+  adVideoUrl:'',
   iva:13
 };
 
@@ -930,12 +957,28 @@ function listenProducts(){
 /* los pedidos completos (listado) solo los puede leer el admin, según las
    reglas de seguridad de Firestore. El cliente consulta UN pedido puntual
    por su número de factura desde "Rastrear pedido". */
+let ordersFirstLoad = true;
+let knownOrderNumbers = new Set();
 function listenOrdersIfAdmin(){
   if(unsubOrders) unsubOrders();
+  ordersFirstLoad = true;
+  knownOrderNumbers = new Set();
   unsubOrders = ordersCol.orderBy('createdAtMs','desc').onSnapshot(snap=>{
     orders = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
-    renderOrders(); renderStats();
+    if(!ordersFirstLoad){
+      const nuevos = orders.filter(o => !knownOrderNumbers.has(o.number));
+      nuevos.forEach(o => toast('🛎️ Nuevo pedido ' + o.number + ' — ' + fmt(o.total), 'ok'));
+    }
+    knownOrderNumbers = new Set(orders.map(o=>o.number));
+    ordersFirstLoad = false;
+    renderOrders(); renderStats(); updateOrdersNavBadge();
   }, err=>{ console.error(err); });
+}
+function updateOrdersNavBadge(){
+  const badge = document.getElementById('ordersNavBadge');
+  const n = orders.filter(o=>o.status==='recibido').length;
+  badge.style.display = n ? 'flex' : 'none';
+  badge.textContent = n;
 }
 
 async function saveSettingsToDB(data){ await settingsRef.set(data, {merge:true}); }
@@ -1036,6 +1079,18 @@ function renderHeader(){
     '<span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span class="dot-open">Abierto</span> · ' + esc(settings.hours) + '</span>' +
     '<span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg>' + esc(settings.shipping) + '</span>';
   document.getElementById('shipHint').textContent = settings.shipping;
+  renderAdBanner();
+}
+function renderAdBanner(){
+  const box = document.getElementById('adBanner');
+  const wrap = document.getElementById('adBannerWrap');
+  const url = (settings.adVideoUrl||'').trim();
+  if(!url){ box.style.display = 'none'; wrap.innerHTML = ''; return; }
+  const yt = youtubeEmbedUrl(url);
+  wrap.innerHTML = yt ?
+    '<iframe src="' + esc(yt) + '?autoplay=1&mute=1&loop=1&playlist=' + esc(yt.split('/').pop()) + '&controls=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>' :
+    '<video src="' + esc(url) + '" autoplay muted loop playsinline controls></video>';
+  box.style.display = 'block';
 }
 
 function renderChips(){
@@ -1123,14 +1178,17 @@ function renderGrid(){
   }).join('');
 }
 
-/* ---------- vista detalle de producto (galería + video) ---------- */
+/* ---------- vista detalle de producto (galería + video + variantes + cantidad) ---------- */
 let pvCurrentId = null;
 let pvSelectedVariantId = null;
+let pvQty = 1;
 function openProductView(id){
   const p = products.find(x=>x.id===id);
   if(!p) return;
   pvCurrentId = id;
   pvSelectedVariantId = null;
+  pvQty = 1;
+  document.getElementById('pvQty').textContent = 1;
   document.getElementById('pvName').textContent = p.name;
   document.getElementById('pvDesc').textContent = p.desc || '';
   const media = [];
@@ -1152,17 +1210,16 @@ function openProductView(id){
     document.getElementById('pvVariantLabel').textContent = p.variantGroupName || 'Tamaños';
     renderPvVariants(p);
     wrap.style.display = 'block';
-    document.getElementById('pvPrice').textContent = displayPrice(p);
   } else {
     wrap.style.display = 'none';
-    document.getElementById('pvPrice').textContent = fmt(p.price);
   }
+  updatePvTotal(p);
 
   const addBtn = document.getElementById('pvAddBtn');
   updatePvAddBtn(p);
   addBtn.onclick = () => {
     if(p.hasVariants && !pvSelectedVariantId){ toast('Elegí una opción de ' + (p.variantGroupName||'tamaño').toLowerCase(), 'err'); return; }
-    addToCart(id, pvSelectedVariantId);
+    addToCart(id, pvSelectedVariantId, pvQty);
     closeProductView();
   };
   document.getElementById('productViewModal').classList.add('show');
@@ -1179,10 +1236,52 @@ function selectPvVariant(vid){
   pvSelectedVariantId = vid;
   const p = products.find(x=>x.id===pvCurrentId);
   if(!p) return;
+  pvQty = 1;
+  document.getElementById('pvQty').textContent = 1;
   renderPvVariants(p);
   const v = activeVariants(p).find(x=>x.id===vid);
-  if(v) document.getElementById('pvPrice').textContent = fmt(v.price);
+  applyVariantImage(v);
+  updatePvTotal(p);
   updatePvAddBtn(p);
+}
+/* Si la opción elegida (ej. tamaño) tiene su propia foto, se muestra esa foto;
+   si no, se vuelve a la portada general del producto. */
+function applyVariantImage(v){
+  if(v && v.image){ document.getElementById('pvMedia').innerHTML = '<img src="' + v.image + '" alt="">'; }
+  else if(pvCurrentMedia.length){ pvShowMedia(pvCurrentMedia, 0); }
+}
+function pvUnit(p){
+  if(p.hasVariants){
+    const v = pvSelectedVariantId ? activeVariants(p).find(x=>x.id===pvSelectedVariantId) : null;
+    return v ? v.price : Math.min(...(activeVariants(p).map(x=>x.price).concat([0])));
+  }
+  return p.price;
+}
+function pvMaxQty(p){
+  if(p.unlimited) return 99;
+  if(p.hasVariants){
+    const v = pvSelectedVariantId ? activeVariants(p).find(x=>x.id===pvSelectedVariantId) : null;
+    return v ? Math.max(0, v.stock||0) : 99;
+  }
+  return Math.max(0, p.stock||0);
+}
+function pvChangeQty(delta){
+  const p = products.find(x=>x.id===pvCurrentId);
+  if(!p) return;
+  const max = Math.max(1, pvMaxQty(p));
+  pvQty = Math.min(max, Math.max(1, pvQty + delta));
+  document.getElementById('pvQty').textContent = pvQty;
+  updatePvTotal(p);
+}
+function updatePvTotal(p){
+  const unit = pvUnit(p);
+  const total = unit * pvQty;
+  const priceBox = document.getElementById('pvPrice');
+  if(p.hasVariants && !pvSelectedVariantId){
+    priceBox.textContent = displayPrice(p);
+  } else {
+    priceBox.innerHTML = fmt(total) + (pvQty>1 ? '<span class="pv-unit-hint">' + fmt(unit) + ' c/u</span>' : '');
+  }
 }
 function updatePvAddBtn(p){
   const addBtn = document.getElementById('pvAddBtn');
@@ -1226,15 +1325,22 @@ function cartLineInfo(key){
   const label = p.name + (variant ? ' (' + variant.name + ')' : '');
   return { p, variant, unitPrice, unitStock, label };
 }
-function addToCart(id, variantId){
+function addToCart(id, variantId, qty){
+  qty = Math.max(1, Math.round(qty||1));
   const key = cartKey(id, variantId);
   const info = cartLineInfo(key);
   if(!info) return;
   const cur = cart[key]||0;
-  if(info.unitStock !== Infinity && cur >= info.unitStock){ toast('No hay más unidades disponibles de ' + info.label, 'err'); return; }
-  cart[key] = cur + 1;
+  const next = cur + qty;
+  if(info.unitStock !== Infinity && next > info.unitStock){
+    toast('Solo hay ' + info.unitStock + ' unidades disponibles de ' + info.label, 'err');
+    cart[key] = info.unitStock;
+    updateCartUI();
+    return;
+  }
+  cart[key] = next;
   updateCartUI();
-  toast(info.label + ' agregado al pedido', 'ok');
+  toast((qty>1 ? qty + '× ' : '') + info.label + ' agregado al pedido', 'ok');
 }
 function setQty(key, qty){
   const info = cartLineInfo(key);
@@ -1501,7 +1607,7 @@ function renderStats(){
   const total = act.reduce((s,o)=>s+o.total,0);
   document.getElementById('stSales').textContent = fmt(total);
   document.getElementById('stSalesSub').textContent = act.length + ' pedido' + (act.length===1?'':'s');
-  document.getElementById('stPend').textContent = orders.filter(o=>o.status==='pendiente').length;
+  document.getElementById('stPend').textContent = orders.filter(o=>o.status==='recibido').length;
   document.getElementById('stDone').textContent = orders.filter(o=>o.status==='entregado').length;
   document.getElementById('stAvg').textContent = act.length ? fmt(total/act.length) : fmt(0);
   drawChart();
@@ -1615,7 +1721,7 @@ function toggleVariantsUI(){
   if(on && !pmVariants.length){ addVariant(); addVariant(); }
 }
 function addVariant(){
-  pmVariants.push({ id: rid(), name:'', price:0, stock:0, removed:false });
+  pmVariants.push({ id: rid(), name:'', price:0, stock:0, removed:false, image:'' });
   renderVariantsPanel();
 }
 function removeVariant(id){
@@ -1638,7 +1744,9 @@ function renderVariantsPanel(){
   const removed = pmVariants.filter(v=>v.removed);
   document.getElementById('variantsList').innerHTML = active.length ? active.map(v =>
     '<div class="variant-row">' +
-      '<span class="vr-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22v-8"/><path d="M12 14c0-4.5-3.5-7.5-8-7.5 0 4.5 3.5 7.5 8 7.5zm0-3c0-4.5 3.5-7.5 8-7.5 0 4.5-3.5 7.5-8 7.5z"/></svg></span>' +
+      '<span class="vr-icon" title="Subir foto de esta opción" onclick="triggerVariantImageUpload(\'' + v.id + '\')">' +
+        (v.image ? '<img src="' + v.image + '">' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22v-8"/><path d="M12 14c0-4.5-3.5-7.5-8-7.5 0 4.5 3.5 7.5 8 7.5zm0-3c0-4.5 3.5-7.5 8-7.5 0 4.5-3.5 7.5-8 7.5z"/></svg>') +
+      '</span>' +
       '<div class="vr-fields">' +
         '<input class="f-input" placeholder="Nombre (Ej: M)" value="' + esc(v.name) + '" oninput="variantField(\'' + v.id + '\',\'name\',this.value)">' +
         '<input class="f-input" type="number" min="0" step="100" placeholder="Precio ₡" value="' + (v.price||'') + '" oninput="variantField(\'' + v.id + '\',\'price\',this.value)">' +
@@ -1651,11 +1759,23 @@ function renderVariantsPanel(){
   document.getElementById('variantsRemovedWrap').style.display = removed.length ? 'block' : 'none';
   document.getElementById('variantsRemovedList').innerHTML = removed.map(v =>
     '<div class="variant-row removed">' +
-      '<span class="vr-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22v-8"/><path d="M12 14c0-4.5-3.5-7.5-8-7.5 0 4.5 3.5 7.5 8 7.5zm0-3c0-4.5 3.5-7.5 8-7.5 0 4.5-3.5 7.5-8 7.5z"/></svg></span>' +
+      '<span class="vr-icon">' + (v.image ? '<img src="' + v.image + '">' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22v-8"/><path d="M12 14c0-4.5-3.5-7.5-8-7.5 0 4.5 3.5 7.5 8 7.5zm0-3c0-4.5 3.5-7.5 8-7.5 0 4.5-3.5 7.5-8 7.5z"/></svg>') + '</span>' +
       '<div class="vr-fields"><span style="align-self:center;font-size:13px;font-weight:600">' + esc(v.name||'(sin nombre)') + '</span><span style="align-self:center;font-size:12.5px;color:var(--muted)">' + fmt(v.price) + '</span><span style="align-self:center;font-size:12.5px;color:var(--muted)">' + v.stock + ' uds</span></div>' +
       '<button type="button" class="vr-restore" title="Restaurar" onclick="restoreVariant(\'' + v.id + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>' +
     '</div>'
   ).join('');
+}
+let variantImgSlot = null;
+function triggerVariantImageUpload(vid){ variantImgSlot = vid; document.getElementById('variantImgFileInput').click(); }
+function onVariantImageFileChosen(input){
+  const file = input.files && input.files[0];
+  const vid = variantImgSlot;
+  if(!file || vid===null){ input.value=''; return; }
+  compressImageFile(file, 700, 0.72).then(dataUrl => {
+    const v = pmVariants.find(x=>x.id===vid);
+    if(v){ v.image = dataUrl; renderVariantsPanel(); }
+  }).catch(()=> toast('No se pudo procesar esa foto', 'err'));
+  input.value = '';
 }
 
 function openProductModal(id){
@@ -1711,7 +1831,7 @@ async function saveProduct(){
   if(hasVariants){
     variantGroupName = document.getElementById('pVariantGroup').value.trim() || 'Tamaños';
     variants = pmVariants
-      .map(v => ({ id:v.id, name:(v.name||'').trim(), price:Math.max(0,+v.price||0), stock:Math.max(0,Math.round(+v.stock||0)), removed:!!v.removed }))
+      .map(v => ({ id:v.id, name:(v.name||'').trim(), price:Math.max(0,+v.price||0), stock:Math.max(0,Math.round(+v.stock||0)), removed:!!v.removed, image:v.image||'' }))
       .filter(v => v.name || v.removed);
     const activeV = variants.filter(v=>!v.removed);
     if(!activeV.length){ toast('Agregá al menos una opción de variante (ej: M, S, XL)', 'err'); return; }
@@ -1816,8 +1936,15 @@ function viewOrder(num){
   if(!o) return;
   lastOrder = o;
   const st = STATUS[o.status]||STATUS.recibido;
+  const quickBtns = o.status==='cancelado' ? '' :
+    '<div class="inv-actions" style="padding:0 0 16px;gap:8px;flex-wrap:wrap">' +
+      (o.status!=='entregado' ? '<button class="btn-primary" style="width:auto;padding:9px 16px" onclick="setOrderStatus(\'' + o.number + '\',\'entregado\')">Marcar como entregado</button>' : '') +
+      (o.status==='recibido' ? '<button class="btn-ghost" style="width:auto;padding:9px 16px" onclick="setOrderStatus(\'' + o.number + '\',\'confirmado\')">Confirmar pago</button>' : '') +
+    '</div>';
   document.getElementById('orderDetail').innerHTML =
     '<div style="margin-bottom:12px"><span class="pill ' + st.cls + '">' + st.lbl + '</span></div>' +
+    '<div class="uber-track-admin">' + orderStepsHTML(o) + '</div>' +
+    quickBtns +
     '<div class="invoice">' + invoiceHTML(o) + '</div>' +
     '<div class="inv-actions" style="padding:16px 0 0">' +
       '<button class="btn-ghost" onclick="printInvoice()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir factura</button>' +
@@ -1855,16 +1982,17 @@ async function trackOrder(){
     console.error(e);
   }
 }
-function renderTracking(o){
-  document.getElementById('trackForm').style.display = 'none';
-  const box = document.getElementById('trackResult');
-  box.style.display = 'block';
-  const cancelled = o.status === 'cancelado';
+/* Arma el timeline visual de estados (recibido → confirmado → preparando → en camino → entregado),
+   reutilizado tanto en el rastreo del cliente como en el detalle de pedido del admin. */
+function orderStepsHTML(o){
+  if(o.status === 'cancelado'){
+    return '<div class="uber-step cancelled"><div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></div><div class="txt"><b>Pedido cancelado</b><span>Contactanos por WhatsApp si tenés dudas</span></div></div>';
+  }
   const doneIdx = UBER_STEPS.findIndex(s=>s.key===o.status);
   const timeMap = {};
   (o.timeline||[]).forEach(t=>{ timeMap[t.status] = t.at; });
   const steps = UBER_STEPS.map((s,i) => {
-    const cls = cancelled ? '' : (i < doneIdx ? 'done' : (i === doneIdx ? 'done current' : ''));
+    const cls = (i < doneIdx ? 'done' : (i === doneIdx ? 'done current' : ''));
     const at = timeMap[s.key] ? new Date(timeMap[s.key]).toLocaleString('es-CR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
     const icon = i===0 ? '<path d="M9 11h6M9 15h4M5 3h14v18l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5z"/>' :
       i===1 ? '<path d="M20 6 9 17l-5-5"/>' :
@@ -1875,11 +2003,15 @@ function renderTracking(o){
       '<div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">' + icon + '</svg></div>' +
       '<div class="txt"><b>' + s.lbl + '</b><span>' + (at || s.sub) + '</span></div></div>';
   }).join('');
+  return '<div class="uber-track">' + steps + '</div>';
+}
+function renderTracking(o){
+  document.getElementById('trackForm').style.display = 'none';
+  const box = document.getElementById('trackResult');
+  box.style.display = 'block';
   box.innerHTML =
     '<div class="trk-head"><b>Factura ' + esc(o.number) + '</b><span>' + fmt(o.total) + ' · ' + esc(o.customer.delivery) + '</span></div>' +
-    (cancelled ?
-      '<div class="uber-step cancelled"><div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></div><div class="txt"><b>Pedido cancelado</b><span>Contactanos por WhatsApp si tenés dudas</span></div></div>' :
-      '<div class="uber-track">' + steps + '</div>') +
+    orderStepsHTML(o) +
     '<button class="btn-ghost" onclick="openTracking()">Consultar otro pedido</button>';
 }
 
@@ -1895,6 +2027,7 @@ function loadSettingsForm(){
   document.getElementById('sWa').value = settings.whatsapp;
   document.getElementById('sWebUrl').value = settings.websiteUrl||'';
   document.getElementById('sBingoUrl').value = settings.bingoUrl||'';
+  document.getElementById('sAdVideo').value = settings.adVideoUrl||'';
   document.getElementById('sinpePreview').textContent = settings.sinpe;
   pendingLogoDataUrl = null;
   document.getElementById('logoPreview').innerHTML = settings.logoUrl ? '<img src="' + esc(settings.logoUrl) + '" alt="Logo">' : logoSVG;
@@ -1932,6 +2065,7 @@ async function saveSettings(){
     sinpe, whatsapp: wa,
     websiteUrl:document.getElementById('sWebUrl').value.trim(),
     bingoUrl:document.getElementById('sBingoUrl').value.trim(),
+    adVideoUrl:document.getElementById('sAdVideo').value.trim(),
     logoUrl: pendingLogoDataUrl !== null ? pendingLogoDataUrl : (settings.logoUrl||'')
   };
   try{
