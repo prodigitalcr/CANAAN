@@ -4,6 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CANAAN — Vivero y Servicios</title>
+<!-- Firebase (compat SDK) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBOb3nCj4YS7Dmi6zic_yB3KCS-UHVVgpc",
+    authDomain: "canaan-24688.firebaseapp.com",
+    projectId: "canaan-24688",
+    storageBucket: "canaan-24688.firebasestorage.app",
+    messagingSenderId: "952571784784",
+    appId: "1:952571784784:web:258ce5e88c17e7a353ab55",
+    measurementId: "G-C2PKV0EFNW"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  /* Correo(s) autorizados como administrador maestro de la tienda.
+     Deben coincidir EXACTAMENTE con las reglas de Firestore y con el
+     usuario que crees en Firebase Authentication > Users. */
+  const ADMIN_EMAILS = ['admin@canaan.com'];
+</script>
 <style>
 :root{
   --green:#1B7A43; --green-dark:#0F5A30; --green-soft:#E7F5EC;
@@ -187,6 +209,47 @@ textarea.f-input{resize:vertical;min-height:70px}
 .order-ok .check svg{width:34px;height:34px}
 .order-ok h4{font-size:17px;margin-bottom:4px}
 .order-ok p{font-size:13px;color:var(--muted)}
+
+/* ============ MULTIMEDIA PRODUCTO (ADMIN) ============ */
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.media-item{position:relative;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;aspect-ratio:1;background:#F9FAFB}
+.media-item img{width:100%;height:100%;object-fit:cover;display:block}
+.media-item input{position:absolute;inset:auto 0 0 0;width:100%;border:none;background:rgba(255,255,255,.95);font-size:10.5px;padding:5px 6px;outline:none}
+.media-item .cover-tag{position:absolute;top:6px;left:6px;background:var(--ink);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px}
+.media-item .rm-btn{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(220,38,38,.92);color:#fff;display:flex;align-items:center;justify-content:center}
+.media-item .rm-btn svg{width:12px;height:12px}
+.media-item .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#CBD5E1}
+.media-item .ph svg{width:30px;height:30px}
+
+/* ============ GALERÍA / DETALLE PRODUCTO (CLIENTE) ============ */
+.pv-media{border-radius:16px;overflow:hidden;aspect-ratio:1.4;background:#F3F4F6;display:flex;align-items:center;justify-content:center}
+.pv-media img,.pv-media video{width:100%;height:100%;object-fit:cover}
+.pv-thumbs{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:2px}
+.pv-thumbs .th{width:64px;height:64px;flex-shrink:0;border-radius:10px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:#F3F4F6}
+.pv-thumbs .th.active{border-color:var(--green)}
+.pv-thumbs .th img,.pv-thumbs .th video{width:100%;height:100%;object-fit:cover}
+.pv-thumbs .th.vid{display:flex;align-items:center;justify-content:center;color:#fff;background:#111827}
+.pv-desc{margin:16px 0;font-size:14px;color:var(--muted);line-height:1.5}
+.pv-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;border-top:1px solid var(--line);padding-top:16px}
+
+/* ============ RASTREO DE PEDIDO ============ */
+.trk-head{background:var(--green-soft);border-radius:14px;padding:14px 16px;margin-bottom:18px}
+.trk-head b{display:block;font-size:15px}
+.trk-head span{font-size:12.5px;color:var(--muted)}
+.uber-track{position:relative;padding-left:6px;margin:22px 0}
+.uber-step{position:relative;display:flex;gap:14px;padding-bottom:26px}
+.uber-step:last-child{padding-bottom:0}
+.uber-step .dot{width:30px;height:30px;border-radius:50%;background:#E5E7EB;color:#9CA3AF;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1;transition:.2s}
+.uber-step .dot svg{width:15px;height:15px}
+.uber-step .line{position:absolute;left:15px;top:30px;width:2px;height:calc(100% - 4px);background:#E5E7EB}
+.uber-step:last-child .line{display:none}
+.uber-step.done .dot{background:var(--green);color:#fff}
+.uber-step.done .line{background:var(--green)}
+.uber-step.current .dot{background:var(--yellow);color:var(--ink);box-shadow:0 0 0 5px var(--yellow-soft)}
+.uber-step .txt b{font-size:13.5px;display:block}
+.uber-step .txt span{font-size:12px;color:var(--muted)}
+.uber-step.cancelled .dot{background:var(--danger);color:#fff}
+.track-not-found{text-align:center;padding:20px;color:var(--muted);font-size:13.5px}
 </style>
 <style>
 /* ============ ADMIN ============ */
@@ -322,6 +385,10 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input class="search-input" id="searchInput" placeholder="Buscar producto" oninput="renderGrid()">
       </div>
+      <button class="admin-link" onclick="openTracking()" title="Rastrear mi pedido">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/></svg>
+        <span>Rastrear pedido</span>
+      </button>
       <button class="cart-btn" onclick="toggleCart(true)" title="Ver carrito">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 3H2"/><circle cx="9" cy="20" r="1.6"/><circle cx="17" cy="20" r="1.6"/></svg>
         <span class="cart-badge" id="cartBadge" style="display:none">0</span>
@@ -334,6 +401,7 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
   </header>
 
   <div class="info-bar" id="infoBar"></div>
+  <div class="info-bar" id="externalLinksBar" style="padding-top:0"></div>
 
   <div class="toolbar">
     <div class="chips" id="catChips"></div>
@@ -442,10 +510,11 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
     <div class="modal-body" style="padding:30px 26px">
       <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
       <h3>Acceso administrador</h3>
-      <p>Solo el dueño de la tienda puede ingresar aquí.</p>
+      <p>Solo el dueño de la tienda puede ingresar aquí. Control maestro.</p>
+      <div class="f-group" style="text-align:left"><label>Correo</label><input class="f-input" type="email" id="adminEmail" placeholder="admin@canaan.com" onkeydown="if(event.key==='Enter')document.getElementById('adminPass').focus()"></div>
       <div class="f-group" style="text-align:left"><label>Contraseña</label><input class="f-input" type="password" id="adminPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <button class="btn-primary" onclick="doLogin()">Ingresar</button>
-      <p class="hint" style="margin-top:12px">Contraseña inicial: <b>admin123</b> (cámbiala en Configuración)</p>
+      <p class="hint" style="margin-top:12px">El usuario administrador se crea desde Firebase Authentication (consola de Firebase).</p>
     </div>
   </div>
 </div>
@@ -576,12 +645,18 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
       </div>
 
       <div class="settings-card">
-        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Seguridad</h4>
-        <div class="desc">Contraseña para entrar al panel de administración.</div>
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg>Enlaces externos</h4>
+        <div class="desc">Botones visibles para los clientes en la tienda. Dejalos vacíos para ocultarlos.</div>
         <div class="f-row">
-          <div class="f-group"><label>Nueva contraseña</label><input class="f-input" type="password" id="sPass1" placeholder="Dejar vacío para no cambiar"></div>
-          <div class="f-group"><label>Confirmar contraseña</label><input class="f-input" type="password" id="sPass2" placeholder="Repetí la contraseña"></div>
+          <div class="f-group"><label>Sitio web de Canaan</label><input class="f-input" id="sWebUrl" placeholder="https://www.canaan.co.cr"></div>
+          <div class="f-group"><label>Plataforma de juegos (Bingo de Plantas)</label><input class="f-input" id="sBingoUrl" placeholder="https://usuario.github.io/bingo-plantas"></div>
         </div>
+      </div>
+
+      <div class="settings-card">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Seguridad</h4>
+        <div class="desc">El acceso de administrador (control maestro) se gestiona con Firebase Authentication. Para cambiar la contraseña, hacelo desde la consola de Firebase o pedile a Claude que agregue un flujo de "cambio de contraseña" con reautenticación.</div>
+        <div class="hint">Correo admin autorizado actualmente en el código: <b>ADMIN_EMAILS</b> (ver &lt;script&gt; al inicio del archivo).</div>
       </div>
 
       <div style="max-width:760px;display:flex;gap:10px;justify-content:flex-end">
@@ -601,6 +676,25 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
     </div>
     <div class="modal-body">
       <input type="hidden" id="pId">
+
+      <div class="f-group">
+        <label>Fotos del producto <span class="req">*</span> <span class="hint" style="display:inline">(mínimo 3, la primera es la portada)</span></label>
+        <div class="media-grid" id="pImgGrid"></div>
+        <button type="button" class="btn-ghost" style="width:auto;padding:9px 16px;margin-top:8px" onclick="addImageField()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Agregar foto
+        </button>
+      </div>
+
+      <div class="f-group">
+        <label>Video del producto (buena resolución)</label>
+        <input class="f-input" id="pVideoUrl" placeholder="URL directa del video (.mp4) o de tu hosting">
+        <p class="hint">Este video se muestra a los clientes al abrir el producto.</p>
+      </div>
+      <div class="f-group">
+        <label>Enlace opcional del video (YouTube, Drive, etc.)</label>
+        <input class="f-input" id="pVideoLink" placeholder="https://youtube.com/... (opcional)">
+      </div>
+
       <div class="f-group"><label>Nombre del producto <span class="req">*</span></label><input class="f-input" id="pName" placeholder="Ej: Monstera Deliciosa"></div>
       <div class="f-group"><label>Descripción</label><textarea class="f-input" id="pDesc" placeholder="Descripción corta para los clientes"></textarea></div>
       <div class="f-row">
@@ -609,7 +703,7 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
       </div>
       <div class="f-row">
         <div class="f-group"><label>Categoría</label><select class="f-input" id="pCat"></select></div>
-        <div class="f-group"><label>Ícono</label><select class="f-input" id="pIcon">
+        <div class="f-group"><label>Ícono (respaldo si falta foto)</label><select class="f-input" id="pIcon">
           <option value="leaf">Hoja</option><option value="plant">Planta en maceta</option><option value="cactus">Cactus</option>
           <option value="flower">Flor</option><option value="citrus">Cítrico</option><option value="seedling">Brote</option>
           <option value="palm">Palmera</option><option value="bottle">Botella</option><option value="spray">Atomizador</option>
@@ -622,6 +716,43 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
         <label for="pUnlimited" style="margin:0;font-weight:600">Es servicio o producto sin control de stock</label>
       </div>
       <button class="btn-primary" onclick="saveProduct()">Guardar producto</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= GALERÍA / DETALLE PRODUCTO (CLIENTE) ================= -->
+<div class="modal" id="productViewModal">
+  <div class="modal-bg" onclick="closeProductView()"></div>
+  <div class="modal-card wide">
+    <div class="modal-head"><h3 id="pvName">Producto</h3>
+      <button class="close-x" onclick="closeProductView()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="pv-media" id="pvMedia"></div>
+      <div class="pv-thumbs" id="pvThumbs"></div>
+      <div class="pv-desc" id="pvDesc"></div>
+      <div class="pv-foot">
+        <span class="p-price" id="pvPrice"></span>
+        <button class="btn-primary" style="width:auto;padding:12px 22px" id="pvAddBtn">Agregar al pedido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= RASTREAR PEDIDO (CLIENTE) ================= -->
+<div class="modal" id="trackModal">
+  <div class="modal-bg" onclick="closeTracking()"></div>
+  <div class="modal-card">
+    <div class="modal-head"><h3>Rastrear mi pedido</h3>
+      <button class="close-x" onclick="closeTracking()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="trackForm">
+        <div class="f-group"><label>Número de factura</label><input class="f-input" id="trkNum" placeholder="Ej: F-20260717-0001"></div>
+        <div class="f-group"><label>Últimos 4 dígitos de tu teléfono</label><input class="f-input" id="trkPhone" placeholder="8888" inputmode="numeric" maxlength="4"></div>
+        <button class="btn-primary" onclick="trackOrder()">Buscar pedido</button>
+      </div>
+      <div id="trackResult" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -642,9 +773,8 @@ body.in-admin #storeView,body.in-admin .wa-float{display:none}
 <script>
 /* =====================================================
    CANAAN STORE — tienda web con pago SINPE + WhatsApp
-   Datos persistentes en localStorage (por navegador)
+   Datos persistentes en Firebase Firestore (proyecto canaan-24688)
 ===================================================== */
-const LS = { settings:'canaan_settings', products:'canaan_products', orders:'canaan_orders', session:'canaan_admin_session' };
 
 const DEFAULT_SETTINGS = {
   storeName:'CANAAN',
@@ -653,8 +783,9 @@ const DEFAULT_SETTINGS = {
   shipping:'Hacemos envíos por Uber Flash · San José, CR',
   sinpe:'8888-8888',
   whatsapp:'50688888888',
-  adminPass:'admin123',
   categories:['Plantas','Productos','Servicios'],
+  websiteUrl:'',
+  bingoUrl:'',
   iva:13
 };
 
@@ -663,46 +794,51 @@ const GRADS = [
   ['#FFF1DC','#FFE3B3'],['#E4F4F1','#C4E8E1'],['#F2E8DC','#E4D2B8'],['#E8F0DC','#D2E2B8']
 ];
 
-function defaultProducts(){
-  const P = (name,desc,price,stock,cat,icon,unlimited)=>({id:'p'+Math.random().toString(36).slice(2,9),name,desc,price,stock,cat,icon,unlimited:!!unlimited,active:true});
-  return [
-    P('Limón Mandarina','Planta prematura de limón mandarina, ideal para patio o maceta grande.',15000,7,'Plantas','citrus'),
-    P('Monstera Deliciosa (M)','Talla M. Planta tropical de gran porte, hojas fenestradas.',10000,4,'Plantas','leaf'),
-    P('Monstera Deliciosa (S)','Talla S, de hojas pequeñas. Perfecta para interiores.',4000,25,'Plantas','leaf'),
-    P('Monstera Adansonii','Planta colgante de hojas perforadas, poca agua.',5500,23,'Plantas','leaf'),
-    P('Potos','Potos de poca luz y poco riego. Muy resistente.',4000,30,'Plantas','plant'),
-    P('Potos (M)','Potos con tutor vertical, fácil cuidado.',5500,8,'Plantas','plant'),
-    P('Potos Colgante','Planta colgante ideal para repisas y macetas altas.',3500,12,'Plantas','plant'),
-    P('Sansevieria M','Planta lengua de suegra, ideal para principiantes.',3500,21,'Plantas','cactus'),
-    P('Cactus','Cactus vertical, ideal para clima cálido y poco riego.',3500,70,'Plantas','cactus'),
-    P('Peperomia','Peperomia verde. Planta de interior compacta.',4500,10,'Plantas','plant'),
-    P('Singonio','La planta de foto es un singonio trepador de fácil cuidado.',2000,15,'Plantas','seedling'),
-    P('Tabacón','Planta de Tabacón, pequeña y de sombra parcial.',5000,50,'Plantas','palm'),
-    P('Filodendro Selloum','Filodendro Selloum de fácil cuidado, hojas grandes.',5000,4,'Plantas','leaf'),
-    P('Iris amarillo (M)','Luz: prefiere pleno sol, aunque tolera media sombra.',2500,20,'Plantas','flower'),
-    P('Terrarios','Terrarios con suculentas, listos para regalar.',3500,5,'Plantas','jar'),
-    P('Biofert 1L','Biofert 1L, ideal para fertilizar todo tipo de plantas.',2000,18,'Productos','bottle'),
-    P('Biofert 500 ml PREPARADO','Biofert preparado para aplicar directo en hojas y suelo.',2000,5,'Productos','spray'),
-    P('Germinación de semillas','Germinamos para usted sus semillas con alta tasa de éxito.',5000,0,'Servicios','seedling',true),
-    P('Propagación de especies locales','Servicio enfocado para la propagación de plantas locales.',15000,0,'Servicios','shears',true),
-    P('Servicios de Jardinería','Corte, limpieza y mantenimiento profesional de jardines.',25000,0,'Servicios','shears',true),
-    P('Muralismo en Jardín','Murales artísticos para jardines y paredes exteriores.',45000,0,'Servicios','brush',true),
-    P('Lavado a presión','Servicio de lavado a presión para aceras, paredes y pisos.',20000,0,'Servicios','drops',true),
-    P('Sistema de Cámaras de Seguridad','Instalación de sistemas cerrados de grabación (CCTV).',20000,0,'Servicios','camera',true)
-  ];
-}
-
-/* ---------- capa de datos ---------- */
-function load(key, fallback){
-  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; }
-}
-function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
-
-let settings = Object.assign({}, DEFAULT_SETTINGS, load(LS.settings, {}));
-let products = load(LS.products, null);
-if(!products){ products = defaultProducts(); save(LS.products, products); }
-let orders = load(LS.orders, []);
+/* ---------- capa de datos (Firestore) ---------- */
+let settings = Object.assign({}, DEFAULT_SETTINGS);
+let products = [];
+let orders = [];
 let cart = {}; // {productId: qty}
+let isAdminSession = false;
+let unsubOrders = null;
+
+const settingsRef = db.collection('settings').doc('store');
+const productsCol = db.collection('products');
+const ordersCol = db.collection('orders');
+
+function listenSettings(){
+  settingsRef.onSnapshot(snap=>{
+    settings = Object.assign({}, DEFAULT_SETTINGS, snap.exists ? snap.data() : {});
+    renderHeader(); renderChips(); renderExternalLinks();
+    if(document.body.classList.contains('in-admin')) loadSettingsForm();
+  });
+}
+
+function listenProducts(){
+  productsCol.onSnapshot(snap=>{
+    products = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+    renderGrid();
+    if(document.body.classList.contains('in-admin')) renderInventory();
+  }, err=>{ console.error(err); });
+}
+
+/* los pedidos completos (listado) solo los puede leer el admin, según las
+   reglas de seguridad de Firestore. El cliente consulta UN pedido puntual
+   por su número de factura desde "Rastrear pedido". */
+function listenOrdersIfAdmin(){
+  if(unsubOrders) unsubOrders();
+  unsubOrders = ordersCol.orderBy('createdAtMs','desc').onSnapshot(snap=>{
+    orders = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+    renderOrders(); renderStats();
+  }, err=>{ console.error(err); });
+}
+
+async function saveSettingsToDB(data){ await settingsRef.set(data, {merge:true}); }
+async function saveProductToDB(id, data){
+  if(id) await productsCol.doc(id).set(data, {merge:true});
+  else await productsCol.add(data);
+}
+async function deleteProductFromDB(id){ await productsCol.doc(id).delete(); }
 
 /* ---------- helpers ---------- */
 function fmt(n){ return '₡' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'\u2009'); }
@@ -765,11 +901,24 @@ function renderChips(){
 }
 function setCat(c){ activeCat = c; renderChips(); renderGrid(); }
 
+function renderExternalLinks(){
+  const bar = document.getElementById('externalLinksBar');
+  const btns = [];
+  if(settings.websiteUrl) btns.push('<a class="item" href="' + esc(settings.websiteUrl) + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg>Sitio web de Canaan</a>');
+  if(settings.bingoUrl) btns.push('<a class="item" href="' + esc(settings.bingoUrl) + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Bingo de Plantas</a>');
+  bar.innerHTML = btns.join('');
+}
+
+/* el cliente NUNCA ve la cantidad exacta en inventario, solo disponibilidad */
 function stockInfo(p){
   if(p.unlimited) return {label:'Disponible', cls:'ok', can:true};
-  if(p.stock <= 0) return {label:'Agotado', cls:'out', can:false};
-  if(p.stock <= 3) return {label:'¡Últimas ' + p.stock + '!', cls:'low', can:true};
-  return {label: p.stock + ' disponibles', cls:'ok', can:true};
+  if((p.stock||0) <= 0) return {label:'Agotado', cls:'out', can:false};
+  if(p.stock <= 3) return {label:'Pocas unidades', cls:'low', can:true};
+  return {label:'Disponible', cls:'ok', can:true};
+}
+
+function firstImage(p){
+  return (p.images && p.images.length) ? p.images[0] : null;
 }
 
 function renderGrid(){
@@ -790,21 +939,69 @@ function renderGrid(){
   grid.innerHTML = list.map(p => {
     const st = stockInfo(p);
     const g = gradFor(p.id);
-    return '<div class="p-card">' +
+    const img = firstImage(p);
+    const media = img ?
+      '<img src="' + esc(img) + '" alt="' + esc(p.name) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover">' :
+      svgIcon(p.icon);
+    return '<div class="p-card" onclick="openProductView(\'' + p.id + '\')">' +
       '<div class="p-img" style="background:linear-gradient(135deg,' + g[0] + ',' + g[1] + ')">' +
-        svgIcon(p.icon) +
+        media +
         '<span class="p-stock ' + st.cls + '">' + st.label + '</span>' +
       '</div>' +
       '<div class="p-body">' +
         '<div class="p-name">' + esc(p.name) + '</div>' +
         '<div class="p-desc">' + esc(p.desc||'') + '</div>' +
         '<div class="p-foot"><span class="p-price">' + fmt(p.price) + '</span>' +
-        '<button class="add-btn" ' + (st.can?'':'disabled') + ' onclick="addToCart(\'' + p.id + '\')" title="Agregar al carrito">' +
+        '<button class="add-btn" ' + (st.can?'':'disabled') + ' onclick="event.stopPropagation();addToCart(\'' + p.id + '\')" title="Agregar al carrito">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>' +
         '</div>' +
       '</div></div>';
   }).join('');
 }
+
+/* ---------- vista detalle de producto (galería + video) ---------- */
+let pvCurrentId = null;
+function openProductView(id){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  pvCurrentId = id;
+  const st = stockInfo(p);
+  document.getElementById('pvName').textContent = p.name;
+  document.getElementById('pvDesc').textContent = p.desc || '';
+  document.getElementById('pvPrice').textContent = fmt(p.price);
+  const media = [];
+  (p.images||[]).forEach(url => media.push({type:'image', url}));
+  if(p.videoUrl) media.push({type:'video', url:p.videoUrl});
+  if(!media.length) media.push({type:'icon', url:p.icon});
+  pvShowMedia(media, 0);
+  document.getElementById('pvThumbs').innerHTML = media.map((m,i) => {
+    if(m.type==='image') return '<div class="th' + (i===0?' active':'') + '" data-i="' + i + '" onclick="pvSelectThumb(' + i + ')"><img src="' + esc(m.url) + '"></div>';
+    if(m.type==='video') return '<div class="th vid' + (i===0?' active':'') + '" data-i="' + i + '" onclick="pvSelectThumb(' + i + ')"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>';
+    return '<div class="th' + (i===0?' active':'') + '" data-i="' + i + '" onclick="pvSelectThumb(' + i + ')" style="display:flex;align-items:center;justify-content:center;background:var(--green-soft)">' + svgIcon(m.url,30) + '</div>';
+  }).join('');
+  pvCurrentMedia = media;
+  const addBtn = document.getElementById('pvAddBtn');
+  addBtn.disabled = !st.can;
+  addBtn.textContent = st.can ? 'Agregar al pedido' : 'Agotado';
+  addBtn.onclick = () => { addToCart(id); closeProductView(); };
+  if(p.videoLink){
+    document.getElementById('pvDesc').innerHTML = esc(p.desc||'') + '<br><a href="' + esc(p.videoLink) + '" target="_blank" rel="noopener" style="color:var(--green);font-weight:700">Ver video adicional ↗</a>';
+  }
+  document.getElementById('productViewModal').classList.add('show');
+}
+let pvCurrentMedia = [];
+function pvShowMedia(media, i){
+  const m = media[i];
+  const box = document.getElementById('pvMedia');
+  if(m.type==='image') box.innerHTML = '<img src="' + esc(m.url) + '" alt="">';
+  else if(m.type==='video') box.innerHTML = '<video src="' + esc(m.url) + '" controls playsinline></video>';
+  else box.innerHTML = svgIcon(m.url, 120);
+}
+function pvSelectThumb(i){
+  pvShowMedia(pvCurrentMedia, i);
+  document.querySelectorAll('#pvThumbs .th').forEach(el=>el.classList.toggle('active', +el.dataset.i===i));
+}
+function closeProductView(){ document.getElementById('productViewModal').classList.remove('show'); }
 </script>
 <script>
 /* ---------- carrito ---------- */
@@ -901,7 +1098,16 @@ function closeCheckout(){
 }
 
 let lastOrder = null;
-function submitOrder(){
+/* Pasos del rastreo estilo Uber Flash */
+const UBER_STEPS = [
+  {key:'recibido',   lbl:'Pedido recibido',   sub:'Tu factura fue generada'},
+  {key:'confirmado', lbl:'Pago confirmado',   sub:'Verificamos tu comprobante SINPE'},
+  {key:'preparando', lbl:'Preparando pedido', sub:'Estamos alistando tus plantas'},
+  {key:'en_camino',  lbl:'En camino',         sub:'Tu pedido va hacia vos'},
+  {key:'entregado',  lbl:'Entregado',         sub:'¡Disfrutá tus plantas!'}
+];
+
+async function submitOrder(){
   const name = document.getElementById('cName').value.trim();
   const phone = document.getElementById('cPhone').value.trim();
   const email = document.getElementById('cEmail').value.trim();
@@ -920,23 +1126,25 @@ function submitOrder(){
     return { id, name:p.name, price:p.price, qty:cart[id] };
   });
 
-  // descontar stock
-  items.forEach(it => {
-    const p = products.find(x=>x.id===it.id);
-    if(p && !p.unlimited){ p.stock = Math.max(0, p.stock - it.qty); }
-  });
-  save(LS.products, products);
-
   const now = new Date();
-  const num = 'F-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '-' + String(orders.length + 1).padStart(4,'0');
+  const num = 'F-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '-' + String(Date.now()).slice(-5);
+  const digits = waDigits(phone);
   const order = {
-    number:num, date:now.toISOString(),
+    number:num, date:now.toISOString(), createdAtMs: now.getTime(),
     customer:{ name, phone, email, address, delivery, notes },
+    trackPhone4: digits.slice(-4),
     items, subtotal:t.sub, iva:t.iva, total:t.total,
-    status:'pendiente'
+    status:'recibido',
+    timeline:[{status:'recibido', at: now.toISOString()}]
   };
-  orders.unshift(order);
-  save(LS.orders, orders);
+
+  try{
+    await ordersCol.doc(num).set(order);
+  }catch(e){
+    toast('No se pudo registrar el pedido. Intentá de nuevo.', 'err');
+    console.error(e);
+    return;
+  }
   lastOrder = order;
 
   cart = {}; updateCartUI(); renderGrid();
@@ -1008,32 +1216,49 @@ function printInvoice(){
 }
 </script>
 <script>
-/* ---------- autenticación admin ---------- */
+/* ---------- autenticación admin (Firebase Auth — control maestro) ---------- */
 function openLogin(){
-  if(sessionStorage.getItem(LS.session)==='1'){ enterAdmin(); return; }
+  if(isAdminSession){ enterAdmin(); return; }
   document.getElementById('loginModal').classList.add('show');
-  setTimeout(()=>document.getElementById('adminPass').focus(), 100);
+  setTimeout(()=>document.getElementById('adminEmail').focus(), 100);
 }
 function closeLogin(){ document.getElementById('loginModal').classList.remove('show'); }
-function doLogin(){
-  const v = document.getElementById('adminPass').value;
-  if(v === settings.adminPass){
-    sessionStorage.setItem(LS.session,'1');
+async function doLogin(){
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass = document.getElementById('adminPass').value;
+  if(!email || !pass){ toast('Ingresá correo y contraseña', 'err'); return; }
+  try{
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    if(!ADMIN_EMAILS.includes(cred.user.email)){
+      await auth.signOut();
+      toast('Esta cuenta no tiene permisos de administrador', 'err');
+      return;
+    }
     document.getElementById('adminPass').value = '';
     closeLogin(); enterAdmin();
     toast('Bienvenido, administrador', 'ok');
-  } else toast('Contraseña incorrecta', 'err');
+  }catch(e){
+    toast('Correo o contraseña incorrectos', 'err');
+  }
 }
-function doLogout(){
-  sessionStorage.removeItem(LS.session);
+async function doLogout(){
+  await auth.signOut();
   document.body.classList.remove('in-admin');
   toast('Sesión cerrada');
 }
 function enterAdmin(){
   document.body.classList.add('in-admin');
-  renderHeader(); renderStats(); renderInventory(); renderOrders(); loadSettingsForm();
+  renderHeader(); listenOrdersIfAdmin(); renderInventory(); loadSettingsForm();
 }
 function viewStore(){ document.body.classList.remove('in-admin'); renderHeader(); renderChips(); renderGrid(); updateCartUI(); }
+
+/* mantiene la sesión de administrador sincronizada con Firebase Auth */
+auth.onAuthStateChanged(user => {
+  isAdminSession = !!(user && ADMIN_EMAILS.includes(user.email));
+  if(!isAdminSession && document.body.classList.contains('in-admin')){
+    document.body.classList.remove('in-admin');
+  }
+});
 function showPanel(name, btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
@@ -1126,6 +1351,25 @@ function renderInventory(){
   }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px">Sin productos</td></tr>';
 }
 
+/* ---------- multimedia del producto (fotos por URL + video) ---------- */
+let pmImages = [];
+function renderImageGrid(){
+  const grid = document.getElementById('pImgGrid');
+  grid.innerHTML = pmImages.map((url,i) => {
+    const preview = url ? '<img src="' + esc(url) + '" onerror="this.style.display=\'none\'">' :
+      '<div class="ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg></div>';
+    return '<div class="media-item">' +
+      (i===0 ? '<span class="cover-tag">Portada</span>' : '') +
+      preview +
+      '<button type="button" class="rm-btn" onclick="removeImageField(' + i + ')" title="Quitar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+      '<input class="f-input" placeholder="URL de la foto " value="' + esc(url) + '" oninput="pmImages[' + i + ']=this.value; refreshImagePreview(' + i + ',this.value)">' +
+    '</div>';
+  }).join('');
+}
+function refreshImagePreview(i,val){ pmImages[i]=val; /* evita re-render completo mientras se escribe */ }
+function addImageField(){ pmImages.push(''); renderImageGrid(); }
+function removeImageField(i){ pmImages.splice(i,1); if(!pmImages.length) pmImages.push(''); renderImageGrid(); }
+
 function openProductModal(id){
   const modal = document.getElementById('productModal');
   const catSel = document.getElementById('pCat');
@@ -1142,56 +1386,68 @@ function openProductModal(id){
     catSel.value = p.cat;
     document.getElementById('pIcon').value = p.icon||'leaf';
     document.getElementById('pUnlimited').checked = !!p.unlimited;
+    document.getElementById('pVideoUrl').value = p.videoUrl||'';
+    document.getElementById('pVideoLink').value = p.videoLink||'';
+    pmImages = (p.images && p.images.length) ? p.images.slice() : ['','',''];
   } else {
     document.getElementById('pmTitle').textContent = 'Crear producto';
-    ['pId','pName','pDesc','pPrice','pStock'].forEach(i=>document.getElementById(i).value='');
+    ['pId','pName','pDesc','pPrice','pStock','pVideoUrl','pVideoLink'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('pIcon').value = 'leaf';
     document.getElementById('pUnlimited').checked = false;
+    pmImages = ['','',''];
   }
+  renderImageGrid();
   modal.classList.add('show');
 }
 function closeProductModal(){ document.getElementById('productModal').classList.remove('show'); }
 
-function saveProduct(){
+async function saveProduct(){
   const id = document.getElementById('pId').value;
   const name = document.getElementById('pName').value.trim();
   const price = parseFloat(document.getElementById('pPrice').value);
   const unlimited = document.getElementById('pUnlimited').checked;
   const stock = unlimited ? 0 : Math.max(0, parseInt(document.getElementById('pStock').value)||0);
+  const images = pmImages.map(u=>u.trim()).filter(Boolean);
   if(!name){ toast('El nombre es obligatorio', 'err'); return; }
   if(isNaN(price) || price < 0){ toast('Ingresá un precio válido', 'err'); return; }
+  if(images.length < 3){ toast('Agregá al menos 3 fotos del producto', 'err'); return; }
   const data = {
     name, desc:document.getElementById('pDesc').value.trim(), price,
     stock, unlimited, cat:document.getElementById('pCat').value,
-    icon:document.getElementById('pIcon').value, active:true
+    icon:document.getElementById('pIcon').value, active:true,
+    images,
+    videoUrl:document.getElementById('pVideoUrl').value.trim(),
+    videoLink:document.getElementById('pVideoLink').value.trim()
   };
-  if(id){
-    const p = products.find(x=>x.id===id);
-    Object.assign(p, data);
-    toast('Producto actualizado', 'ok');
-  } else {
-    data.id = 'p' + Math.random().toString(36).slice(2,9);
-    products.push(data);
-    toast('Producto creado', 'ok');
+  try{
+    await saveProductToDB(id||null, data);
+    toast(id ? 'Producto actualizado' : 'Producto creado', 'ok');
+    closeProductModal();
+  }catch(e){
+    toast('No se pudo guardar el producto', 'err');
+    console.error(e);
   }
-  save(LS.products, products);
-  closeProductModal(); renderInventory();
 }
 
-function deleteProduct(id){
+async function deleteProduct(id){
   const p = products.find(x=>x.id===id);
   if(!p) return;
   if(!confirm('¿Eliminar "' + p.name + '" del inventario?')) return;
-  products = products.filter(x=>x.id!==id);
-  save(LS.products, products);
-  renderInventory();
-  toast('Producto eliminado', 'ok');
+  try{
+    await deleteProductFromDB(id);
+    toast('Producto eliminado', 'ok');
+  }catch(e){
+    toast('No se pudo eliminar el producto', 'err');
+    console.error(e);
+  }
 }
 
 /* ---------- pedidos ---------- */
 const STATUS = {
-  pendiente:{lbl:'Pendiente', cls:'amber'},
-  confirmado:{lbl:'Confirmado', cls:'blue'},
+  recibido:{lbl:'Recibido', cls:'gray'},
+  confirmado:{lbl:'Pago confirmado', cls:'blue'},
+  preparando:{lbl:'Preparando', cls:'amber'},
+  en_camino:{lbl:'En camino', cls:'amber'},
   entregado:{lbl:'Entregado', cls:'green'},
   cancelado:{lbl:'Cancelado', cls:'red'}
 };
@@ -1201,7 +1457,7 @@ function renderOrders(){
   document.getElementById('ordersBody').innerHTML = list.map(o => {
     const d = new Date(o.date);
     const itemsTxt = o.items.map(it=>it.qty+'× '+it.name).join(', ');
-    const st = STATUS[o.status]||STATUS.pendiente;
+    const st = STATUS[o.status]||STATUS.recibido;
     return '<tr>' +
       '<td><b>' + o.number + '</b><div class="order-meta">' + d.toLocaleDateString('es-CR') + ' ' + d.toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'}) + '</div></td>' +
       '<td><span class="order-client">' + esc(o.customer.name) + '</span><div class="order-meta">' + esc(o.customer.phone) + '</div></td>' +
@@ -1217,22 +1473,33 @@ function renderOrders(){
       '</td></tr>';
   }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:30px">Aún no hay pedidos. Cuando un cliente compre en la tienda, aparecerá aquí.</td></tr>';
 }
-function setOrderStatus(num, status){
+async function setOrderStatus(num, status){
   const o = orders.find(x=>x.number===num);
-  if(o){ o.status = status; save(LS.orders, orders); renderStats(); toast('Pedido ' + num + ' → ' + STATUS[status].lbl, 'ok'); }
+  if(!o) return;
+  try{
+    const timeline = (o.timeline||[]).concat([{status, at:new Date().toISOString()}]);
+    await ordersCol.doc(num).update({ status, timeline });
+    toast('Pedido ' + num + ' → ' + STATUS[status].lbl, 'ok');
+  }catch(e){
+    toast('No se pudo actualizar el estado', 'err');
+    console.error(e);
+  }
 }
-function deleteOrder(num){
+async function deleteOrder(num){
   if(!confirm('¿Eliminar el pedido ' + num + '?')) return;
-  orders = orders.filter(o=>o.number!==num);
-  save(LS.orders, orders);
-  renderOrders(); renderStats();
-  toast('Pedido eliminado', 'ok');
+  try{
+    await ordersCol.doc(num).delete();
+    toast('Pedido eliminado', 'ok');
+  }catch(e){
+    toast('No se pudo eliminar el pedido', 'err');
+    console.error(e);
+  }
 }
 function viewOrder(num){
   const o = orders.find(x=>x.number===num);
   if(!o) return;
   lastOrder = o;
-  const st = STATUS[o.status]||STATUS.pendiente;
+  const st = STATUS[o.status]||STATUS.recibido;
   document.getElementById('orderDetail').innerHTML =
     '<div style="margin-bottom:12px"><span class="pill ' + st.cls + '">' + st.lbl + '</span></div>' +
     '<div class="invoice">' + invoiceHTML(o) + '</div>' +
@@ -1240,6 +1507,64 @@ function viewOrder(num){
       '<button class="btn-ghost" onclick="printInvoice()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimir factura</button>' +
     '</div>';
   document.getElementById('orderModal').classList.add('show');
+}
+
+/* ---------- rastreo de pedido (cliente, estilo Uber Flash) ---------- */
+function openTracking(){
+  document.getElementById('trackForm').style.display = 'block';
+  document.getElementById('trackResult').style.display = 'none';
+  document.getElementById('trkNum').value = '';
+  document.getElementById('trkPhone').value = '';
+  document.getElementById('trackModal').classList.add('show');
+}
+function closeTracking(){ document.getElementById('trackModal').classList.remove('show'); }
+
+async function trackOrder(){
+  const num = document.getElementById('trkNum').value.trim();
+  const last4 = document.getElementById('trkPhone').value.trim();
+  if(!num || !last4){ toast('Ingresá el número de factura y tu teléfono', 'err'); return; }
+  const box = document.getElementById('trackResult');
+  try{
+    const snap = await ordersCol.doc(num).get();
+    if(!snap.exists || snap.data().trackPhone4 !== last4){
+      document.getElementById('trackForm').style.display = 'none';
+      box.style.display = 'block';
+      box.innerHTML = '<div class="track-not-found">No encontramos un pedido con esos datos. Verificá el número de factura y tu teléfono.</div>' +
+        '<button class="btn-ghost" onclick="openTracking()">Intentar de nuevo</button>';
+      return;
+    }
+    renderTracking(snap.data());
+  }catch(e){
+    toast('No se pudo consultar el pedido', 'err');
+    console.error(e);
+  }
+}
+function renderTracking(o){
+  document.getElementById('trackForm').style.display = 'none';
+  const box = document.getElementById('trackResult');
+  box.style.display = 'block';
+  const cancelled = o.status === 'cancelado';
+  const doneIdx = UBER_STEPS.findIndex(s=>s.key===o.status);
+  const timeMap = {};
+  (o.timeline||[]).forEach(t=>{ timeMap[t.status] = t.at; });
+  const steps = UBER_STEPS.map((s,i) => {
+    const cls = cancelled ? '' : (i < doneIdx ? 'done' : (i === doneIdx ? 'done current' : ''));
+    const at = timeMap[s.key] ? new Date(timeMap[s.key]).toLocaleString('es-CR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    const icon = i===0 ? '<path d="M9 11h6M9 15h4M5 3h14v18l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5z"/>' :
+      i===1 ? '<path d="M20 6 9 17l-5-5"/>' :
+      i===2 ? '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/>' :
+      i===3 ? '<path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/>' :
+      '<path d="M20 6 9 17l-5-5"/>';
+    return '<div class="uber-step ' + cls + '"><div class="line"></div>' +
+      '<div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">' + icon + '</svg></div>' +
+      '<div class="txt"><b>' + s.lbl + '</b><span>' + (at || s.sub) + '</span></div></div>';
+  }).join('');
+  box.innerHTML =
+    '<div class="trk-head"><b>Factura ' + esc(o.number) + '</b><span>' + fmt(o.total) + ' · ' + esc(o.customer.delivery) + '</span></div>' +
+    (cancelled ?
+      '<div class="uber-step cancelled"><div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></div><div class="txt"><b>Pedido cancelado</b><span>Contactanos por WhatsApp si tenés dudas</span></div></div>' :
+      '<div class="uber-track">' + steps + '</div>') +
+    '<button class="btn-ghost" onclick="openTracking()">Consultar otro pedido</button>';
 }
 
 /* ---------- configuraciones ---------- */
@@ -1251,40 +1576,44 @@ function loadSettingsForm(){
   document.getElementById('sCats').value = settings.categories.join(', ');
   document.getElementById('sSinpe').value = settings.sinpe;
   document.getElementById('sWa').value = settings.whatsapp;
-  document.getElementById('sPass1').value = '';
-  document.getElementById('sPass2').value = '';
+  document.getElementById('sWebUrl').value = settings.websiteUrl||'';
+  document.getElementById('sBingoUrl').value = settings.bingoUrl||'';
   document.getElementById('sinpePreview').textContent = settings.sinpe;
 }
-function saveSettings(){
+async function saveSettings(){
   const name = document.getElementById('sName').value.trim();
   const sinpe = document.getElementById('sSinpe').value.trim();
   const wa = waDigits(document.getElementById('sWa').value);
-  const p1 = document.getElementById('sPass1').value;
-  const p2 = document.getElementById('sPass2').value;
   if(!name){ toast('El nombre de la tienda es obligatorio', 'err'); return; }
   if(waDigits(sinpe).length < 8){ toast('Ingresá un número SINPE válido (8 dígitos)', 'err'); return; }
   if(wa.length < 11){ toast('Ingresá el WhatsApp con código de país (506…)', 'err'); return; }
-  if(p1 || p2){
-    if(p1.length < 6){ toast('La contraseña debe tener al menos 6 caracteres', 'err'); return; }
-    if(p1 !== p2){ toast('Las contraseñas no coinciden', 'err'); return; }
-    settings.adminPass = p1;
-  }
   const cats = document.getElementById('sCats').value.split(',').map(s=>s.trim()).filter(Boolean);
-  settings.storeName = name;
-  settings.tagline = document.getElementById('sTag').value.trim();
-  settings.hours = document.getElementById('sHours').value.trim();
-  settings.shipping = document.getElementById('sShip').value.trim();
-  settings.categories = cats.length ? cats : ['General'];
-  settings.sinpe = sinpe;
-  settings.whatsapp = wa;
-  save(LS.settings, settings);
-  document.getElementById('sinpePreview').textContent = sinpe;
-  renderHeader();
-  toast('Configuración guardada', 'ok');
+  const data = {
+    storeName:name,
+    tagline:document.getElementById('sTag').value.trim(),
+    hours:document.getElementById('sHours').value.trim(),
+    shipping:document.getElementById('sShip').value.trim(),
+    categories: cats.length ? cats : ['General'],
+    sinpe, whatsapp: wa,
+    websiteUrl:document.getElementById('sWebUrl').value.trim(),
+    bingoUrl:document.getElementById('sBingoUrl').value.trim()
+  };
+  try{
+    await saveSettingsToDB(data);
+    document.getElementById('sinpePreview').textContent = sinpe;
+    toast('Configuración guardada', 'ok');
+  }catch(e){
+    toast('No se pudo guardar la configuración', 'err');
+    console.error(e);
+  }
 }
 
 /* ---------- init ---------- */
-renderHeader(); renderChips(); renderGrid(); updateCartUI();
+renderHeader(); renderChips(); renderGrid(); updateCartUI(); renderExternalLinks();
+listenSettings();
+listenProducts();
+/* La primera vez que el administrador entre y presione "Guardar cambios" en
+   Configuraciones, se crea el documento settings/store en Firestore. */
 </script>
 </body>
 </html>
